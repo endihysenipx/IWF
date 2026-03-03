@@ -1,1 +1,6 @@
 .env
+venv/
+__pycache__/
+temp_*.xml
+temp_*.pdf
+temp_api_response.json
