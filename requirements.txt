@@ -1,0 +1,24 @@
+# Web framework
+flask
+
+# Data handling
+pandas
+
+# HTTP requests
+requests
+
+# PDF generation
+reportlab
+
+# PDF → image conversion
+pdf2image
+pillow
+
+# Excel export
+openpyxl
+
+# OpenAI
+openai
+
+# Environment variables (recommended)
+python-dotenv
