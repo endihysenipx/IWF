@@ -18,6 +18,8 @@ def _get_int(name, default):
 @dataclass(frozen=True)
 class Settings:
     api_bearer_token: str
+    local_dev_mode: bool
+    local_data_dir: str
     openai_api_key: str
     poppler_path: str
     max_ab_pages: int
@@ -44,8 +46,11 @@ class Settings:
 
 @lru_cache(maxsize=1)
 def get_settings():
+    local_data_dir = os.getenv("LOCAL_DATA_DIR", os.path.join(os.getcwd(), ".localdata"))
     return Settings(
         api_bearer_token=os.getenv("API_BEARER_TOKEN", ""),
+        local_dev_mode=os.getenv("LOCAL_DEV_MODE", "").strip().lower() in {"1", "true", "yes", "on"},
+        local_data_dir=local_data_dir,
         openai_api_key=os.getenv("OPENAI_API_KEY", ""),
         poppler_path=os.getenv(
             "POPPLER_PATH",

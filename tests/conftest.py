@@ -8,6 +8,8 @@ from app.infrastructure import InMemoryBlobStorage, InMemoryJobQueue, InMemoryJo
 def build_test_services(webhook_result=None):
     settings = Settings(
         api_bearer_token="test-token",
+        local_dev_mode=True,
+        local_data_dir=".pytest-localdata",
         openai_api_key="test-openai-key",
         poppler_path="C:\\poppler\\bin",
         max_ab_pages=0,

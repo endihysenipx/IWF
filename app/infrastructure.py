@@ -1,5 +1,7 @@
 import hashlib
 import json
+import os
+import sqlite3
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
@@ -355,12 +357,246 @@ class ServiceContainer:
     webhook_dispatcher: WebhookDispatcher
 
 
+class LocalFileBlobStorage(BlobStorage):
+    def __init__(self, root_dir):
+        self._root_dir = os.path.join(root_dir, "blobs")
+        os.makedirs(self._root_dir, exist_ok=True)
+
+    def upload_bytes(self, blob_name, payload, content_type):
+        target_path = self._path_for(blob_name)
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+        with open(target_path, "wb") as handle:
+            handle.write(payload)
+        return blob_name
+
+    def download_bytes(self, blob_name):
+        with open(self._path_for(blob_name), "rb") as handle:
+            return handle.read()
+
+    def _path_for(self, blob_name):
+        normalized = blob_name.replace("/", os.sep).replace("\\", os.sep)
+        return os.path.join(self._root_dir, normalized)
+
+
+class SqliteJobStore(JobStore):
+    def __init__(self, db_path):
+        self._db_path = db_path
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        self._initialize()
+
+    def create_job(self, record):
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO jobs (
+                    job_id, status, created_at, updated_at, callback_url, correlation_id,
+                    input_blob_name, output_blob_name, error_code, error_message,
+                    document_number, order_document_number, idempotency_key,
+                    callback_attempts, callback_last_status_code, callback_last_error
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                self._record_to_row(record),
+            )
+        return record
+
+    def get_job(self, job_id):
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM jobs WHERE job_id = ?", (job_id,)).fetchone()
+        return self._row_to_record(row) if row else None
+
+    def get_job_by_idempotency(self, idempotency_key):
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM jobs WHERE idempotency_key = ?",
+                (idempotency_key,),
+            ).fetchone()
+        return self._row_to_record(row) if row else None
+
+    def update_job(self, job_id, **updates):
+        current = self.get_job(job_id)
+        if current is None:
+            raise KeyError(f"Unknown job id {job_id}")
+        updated = current.model_copy(update={"updated_at": utc_now(), **updates})
+        with self._connect() as connection:
+            connection.execute(
+                """
+                UPDATE jobs SET
+                    status = ?, created_at = ?, updated_at = ?, callback_url = ?, correlation_id = ?,
+                    input_blob_name = ?, output_blob_name = ?, error_code = ?, error_message = ?,
+                    document_number = ?, order_document_number = ?, idempotency_key = ?,
+                    callback_attempts = ?, callback_last_status_code = ?, callback_last_error = ?
+                WHERE job_id = ?
+                """,
+                (
+                    updated.status.value if isinstance(updated.status, JobStatus) else str(updated.status),
+                    updated.created_at.isoformat(),
+                    updated.updated_at.isoformat(),
+                    updated.callback_url,
+                    updated.correlation_id,
+                    updated.input_blob_name,
+                    updated.output_blob_name,
+                    updated.error_code,
+                    updated.error_message,
+                    updated.document_number,
+                    updated.order_document_number,
+                    updated.idempotency_key,
+                    updated.callback_attempts,
+                    updated.callback_last_status_code,
+                    updated.callback_last_error,
+                    job_id,
+                ),
+            )
+        return updated
+
+    def _connect(self):
+        connection = sqlite3.connect(self._db_path, timeout=30)
+        connection.row_factory = sqlite3.Row
+        return connection
+
+    def _initialize(self):
+        with self._connect() as connection:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS jobs (
+                    job_id TEXT PRIMARY KEY,
+                    status TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    callback_url TEXT NOT NULL,
+                    correlation_id TEXT,
+                    input_blob_name TEXT,
+                    output_blob_name TEXT,
+                    error_code TEXT,
+                    error_message TEXT,
+                    document_number TEXT,
+                    order_document_number TEXT,
+                    idempotency_key TEXT UNIQUE,
+                    callback_attempts INTEGER NOT NULL DEFAULT 0,
+                    callback_last_status_code INTEGER,
+                    callback_last_error TEXT
+                )
+                """
+            )
+
+    @staticmethod
+    def _record_to_row(record):
+        return (
+            record.job_id,
+            record.status.value if isinstance(record.status, JobStatus) else str(record.status),
+            record.created_at.isoformat(),
+            record.updated_at.isoformat(),
+            record.callback_url,
+            record.correlation_id,
+            record.input_blob_name,
+            record.output_blob_name,
+            record.error_code,
+            record.error_message,
+            record.document_number,
+            record.order_document_number,
+            record.idempotency_key,
+            record.callback_attempts,
+            record.callback_last_status_code,
+            record.callback_last_error,
+        )
+
+    @staticmethod
+    def _row_to_record(row):
+        return JobRecord(
+            job_id=row["job_id"],
+            status=JobStatus(row["status"]),
+            created_at=_iso_to_datetime(row["created_at"]),
+            updated_at=_iso_to_datetime(row["updated_at"]),
+            callback_url=row["callback_url"],
+            correlation_id=row["correlation_id"],
+            input_blob_name=row["input_blob_name"],
+            output_blob_name=row["output_blob_name"],
+            error_code=row["error_code"],
+            error_message=row["error_message"],
+            document_number=row["document_number"],
+            order_document_number=row["order_document_number"],
+            idempotency_key=row["idempotency_key"],
+            callback_attempts=row["callback_attempts"],
+            callback_last_status_code=row["callback_last_status_code"],
+            callback_last_error=row["callback_last_error"],
+        )
+
+
+class SqliteReceivedQueueMessage(ReceivedQueueMessage):
+    def __init__(self, db_path, queue_id, message):
+        super().__init__(message)
+        self._db_path = db_path
+        self._queue_id = queue_id
+
+    def complete(self):
+        with sqlite3.connect(self._db_path, timeout=30) as connection:
+            connection.execute("DELETE FROM queue WHERE id = ?", (self._queue_id,))
+
+    def abandon(self):
+        with sqlite3.connect(self._db_path, timeout=30) as connection:
+            connection.execute("UPDATE queue SET status = 'queued' WHERE id = ?", (self._queue_id,))
+
+
+class SqliteJobQueue(JobQueue):
+    def __init__(self, db_path):
+        self._db_path = db_path
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        self._initialize()
+
+    def enqueue(self, message):
+        with sqlite3.connect(self._db_path, timeout=30) as connection:
+            connection.execute(
+                "INSERT INTO queue (payload, status) VALUES (?, 'queued')",
+                (message.model_dump_json(),),
+            )
+
+    def dequeue(self, max_wait_time=5):
+        with sqlite3.connect(self._db_path, timeout=30) as connection:
+            connection.row_factory = sqlite3.Row
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT id, payload FROM queue WHERE status = 'queued' ORDER BY id LIMIT 1"
+            ).fetchone()
+            if row is None:
+                connection.commit()
+                return None
+            connection.execute("UPDATE queue SET status = 'inflight' WHERE id = ?", (row["id"],))
+            connection.commit()
+        message = QueueMessage.model_validate_json(row["payload"])
+        return SqliteReceivedQueueMessage(self._db_path, row["id"], message)
+
+    def _initialize(self):
+        with sqlite3.connect(self._db_path, timeout=30) as connection:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS queue (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    payload TEXT NOT NULL,
+                    status TEXT NOT NULL
+                )
+                """
+            )
+
+
 def build_service_container(settings=None):
     resolved_settings = settings or get_settings()
-    if not resolved_settings.azure_service_bus_connection_string:
-        raise RuntimeError("Missing AZURE_SERVICE_BUS_CONNECTION_STRING.")
-    if not resolved_settings.azure_storage_connection_string:
-        raise RuntimeError("Missing AZURE_STORAGE_CONNECTION_STRING.")
+    use_local = (
+        resolved_settings.local_dev_mode
+        or not resolved_settings.azure_service_bus_connection_string
+        or not resolved_settings.azure_storage_connection_string
+    )
+    if use_local:
+        db_path = os.path.join(resolved_settings.local_data_dir, "document_jobs.sqlite3")
+        return ServiceContainer(
+            settings=resolved_settings,
+            blob_storage=LocalFileBlobStorage(resolved_settings.local_data_dir),
+            job_store=SqliteJobStore(db_path),
+            job_queue=SqliteJobQueue(db_path),
+            webhook_dispatcher=RequestsWebhookDispatcher(
+                timeout_seconds=resolved_settings.webhook_timeout_seconds,
+                max_attempts=resolved_settings.webhook_max_attempts,
+                backoff_seconds=resolved_settings.webhook_retry_backoff_seconds,
+            ),
+        )
     return ServiceContainer(
         settings=resolved_settings,
         blob_storage=AzureBlobStorage(
