@@ -15,6 +15,13 @@ def _get_int(name, default):
         return default
 
 
+def _get_float(name, default):
+    try:
+        return float(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
 @dataclass(frozen=True)
 class Settings:
     api_bearer_token: str
@@ -42,6 +49,14 @@ class Settings:
     webhook_retry_backoff_seconds: int
     worker_poll_seconds: int
     worker_max_messages: int
+    openai_input_per_million_usd: float
+    openai_output_per_million_usd: float
+    order_api_request_usd: float
+    blob_read_request_usd: float
+    blob_write_request_usd: float
+    queue_enqueue_request_usd: float
+    queue_dequeue_request_usd: float
+    webhook_request_usd: float
 
 
 @lru_cache(maxsize=1)
@@ -79,6 +94,14 @@ def get_settings():
         webhook_retry_backoff_seconds=_get_int("WEBHOOK_RETRY_BACKOFF_SECONDS", 2),
         worker_poll_seconds=_get_int("WORKER_POLL_SECONDS", 5),
         worker_max_messages=_get_int("WORKER_MAX_MESSAGES", 1),
+        openai_input_per_million_usd=_get_float("OPENAI_INPUT_PER_MILLION_USD", 1.25),
+        openai_output_per_million_usd=_get_float("OPENAI_OUTPUT_PER_MILLION_USD", 10.0),
+        order_api_request_usd=_get_float("ORDER_API_REQUEST_USD", 0.0),
+        blob_read_request_usd=_get_float("BLOB_READ_REQUEST_USD", 0.0),
+        blob_write_request_usd=_get_float("BLOB_WRITE_REQUEST_USD", 0.0),
+        queue_enqueue_request_usd=_get_float("QUEUE_ENQUEUE_REQUEST_USD", 0.0),
+        queue_dequeue_request_usd=_get_float("QUEUE_DEQUEUE_REQUEST_USD", 0.0),
+        webhook_request_usd=_get_float("WEBHOOK_REQUEST_USD", 0.0),
     )
 
 

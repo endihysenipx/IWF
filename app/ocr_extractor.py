@@ -6,6 +6,9 @@ from pdf2image import convert_from_bytes, convert_from_path
 from app.config import OPENAI_API_KEY, client, POPPLER_PATH, MAX_AB_PAGES
 
 
+OCR_MODEL = "gpt-5-chat-latest"
+
+
 def extract_data_from_scanned_pdf(pdf_path):
     if not OPENAI_API_KEY or client is None:
         return {"error": "Missing OPENAI_API_KEY environment variable."}
@@ -22,6 +25,7 @@ def extract_data_from_scanned_pdf(pdf_path):
     if not images: return {"error": "No images found."}
 
     content_list = [{"type": "text", "text": "Extract ALL details from this German Order Confirmation. Be extremely precise."}]
+    rendered_image_bytes = 0
 
     for idx, img in enumerate(images, start=1):
         if img.height > 1500:
@@ -29,7 +33,9 @@ def extract_data_from_scanned_pdf(pdf_path):
             img = img.resize((int(img.width * ratio), 1500))
         buffered = io.BytesIO()
         img.save(buffered, format="JPEG")
-        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        image_bytes = buffered.getvalue()
+        rendered_image_bytes += len(image_bytes)
+        img_str = base64.b64encode(image_bytes).decode("utf-8")
         content_list.append(
             {
                 "type": "text",
@@ -106,7 +112,7 @@ def extract_data_from_scanned_pdf(pdf_path):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-5-chat-latest",
+            model=OCR_MODEL,
             messages=[{"role": "user", "content": content_list}],
             max_tokens=4000,
             temperature=0
@@ -114,6 +120,20 @@ def extract_data_from_scanned_pdf(pdf_path):
         content = response.choices[0].message.content.strip()
         if content.startswith("```json"): content = content.replace("```json", "").replace("```", "")
         if content.startswith("```"): content = content.replace("```", "")
-        return json.loads(content)
+        usage = getattr(response, "usage", None)
+        prompt_tokens = int(getattr(usage, "prompt_tokens", 0) or 0)
+        completion_tokens = int(getattr(usage, "completion_tokens", 0) or 0)
+        total_tokens = int(getattr(usage, "total_tokens", prompt_tokens + completion_tokens) or 0)
+        return {
+            "data": json.loads(content),
+            "billing": {
+                "model": OCR_MODEL,
+                "pdf_pages": len(images),
+                "rendered_image_bytes": rendered_image_bytes,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+            },
+        }
     except Exception as e:
         return {"error": f"OpenAI Error: {str(e)}"}

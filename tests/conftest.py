@@ -32,6 +32,14 @@ def build_test_services(webhook_result=None):
         webhook_retry_backoff_seconds=2,
         worker_poll_seconds=1,
         worker_max_messages=1,
+        openai_input_per_million_usd=1.25,
+        openai_output_per_million_usd=10.0,
+        order_api_request_usd=0.0,
+        blob_read_request_usd=0.0,
+        blob_write_request_usd=0.0,
+        queue_enqueue_request_usd=0.0,
+        queue_dequeue_request_usd=0.0,
+        webhook_request_usd=0.0,
     )
     return ServiceContainer(
         settings=settings,

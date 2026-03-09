@@ -150,6 +150,8 @@ class AzureTableJobStore(JobStore):
         data["status"] = record.status.value if isinstance(record.status, JobStatus) else str(record.status)
         data["created_at"] = record.created_at.isoformat()
         data["updated_at"] = record.updated_at.isoformat()
+        if data.get("billing_summary") is not None:
+            data["billing_summary"] = json.dumps(data["billing_summary"])
         return data
 
     @staticmethod
@@ -159,6 +161,8 @@ class AzureTableJobStore(JobStore):
         payload["status"] = JobStatus(payload["status"])
         payload["created_at"] = _iso_to_datetime(payload.get("created_at"))
         payload["updated_at"] = _iso_to_datetime(payload.get("updated_at"))
+        if payload.get("billing_summary"):
+            payload["billing_summary"] = json.loads(payload["billing_summary"])
         return JobRecord(**payload)
 
 
@@ -392,8 +396,8 @@ class SqliteJobStore(JobStore):
                     job_id, status, created_at, updated_at, callback_url, correlation_id,
                     input_blob_name, output_blob_name, error_code, error_message,
                     document_number, order_document_number, idempotency_key,
-                    callback_attempts, callback_last_status_code, callback_last_error
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    callback_attempts, callback_last_status_code, callback_last_error, billing_summary
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 self._record_to_row(record),
             )
@@ -424,7 +428,8 @@ class SqliteJobStore(JobStore):
                     status = ?, created_at = ?, updated_at = ?, callback_url = ?, correlation_id = ?,
                     input_blob_name = ?, output_blob_name = ?, error_code = ?, error_message = ?,
                     document_number = ?, order_document_number = ?, idempotency_key = ?,
-                    callback_attempts = ?, callback_last_status_code = ?, callback_last_error = ?
+                    callback_attempts = ?, callback_last_status_code = ?, callback_last_error = ?,
+                    billing_summary = ?
                 WHERE job_id = ?
                 """,
                 (
@@ -443,6 +448,7 @@ class SqliteJobStore(JobStore):
                     updated.callback_attempts,
                     updated.callback_last_status_code,
                     updated.callback_last_error,
+                    json.dumps(updated.billing_summary) if updated.billing_summary is not None else None,
                     job_id,
                 ),
             )
@@ -473,10 +479,14 @@ class SqliteJobStore(JobStore):
                     idempotency_key TEXT UNIQUE,
                     callback_attempts INTEGER NOT NULL DEFAULT 0,
                     callback_last_status_code INTEGER,
-                    callback_last_error TEXT
+                    callback_last_error TEXT,
+                    billing_summary TEXT
                 )
                 """
             )
+            columns = {row[1] for row in connection.execute("PRAGMA table_info(jobs)").fetchall()}
+            if "billing_summary" not in columns:
+                connection.execute("ALTER TABLE jobs ADD COLUMN billing_summary TEXT")
 
     @staticmethod
     def _record_to_row(record):
@@ -497,6 +507,7 @@ class SqliteJobStore(JobStore):
             record.callback_attempts,
             record.callback_last_status_code,
             record.callback_last_error,
+            json.dumps(record.billing_summary) if record.billing_summary is not None else None,
         )
 
     @staticmethod
@@ -518,6 +529,7 @@ class SqliteJobStore(JobStore):
             callback_attempts=row["callback_attempts"],
             callback_last_status_code=row["callback_last_status_code"],
             callback_last_error=row["callback_last_error"],
+            billing_summary=json.loads(row["billing_summary"]) if row["billing_summary"] else None,
         )
 
 

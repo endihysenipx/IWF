@@ -42,7 +42,11 @@ def test_worker_processes_job_and_posts_completion(monkeypatch):
     updated = services.job_store.get_job(job_id)
     assert updated.status == JobStatus.COMPLETED
     assert updated.output_blob_name == "output/job-1/ORDRSP_AB-10.xml"
+    assert updated.billing_summary is not None
+    assert updated.billing_summary["usage"]["input_pdf_bytes"] == len(b"%PDF-1.7 payload")
+    assert updated.billing_summary["costs"]["total_estimated_usd"] == 0.0
     assert services.webhook_dispatcher.calls[0]["payload"]["status"] == "completed"
+    assert services.webhook_dispatcher.calls[0]["payload"]["billing_summary"] is not None
     assert base64.b64decode(services.webhook_dispatcher.calls[0]["payload"]["ordrsp_xml_base64"]) == b"<OrdrspMessage />"
 
 
@@ -72,4 +76,6 @@ def test_processor_marks_job_failed_when_order_number_missing(monkeypatch):
     assert failed.error_code == "ORDER_DOCUMENT_NOT_FOUND"
     assert failed.callback_attempts == 2
     assert failed.callback_last_status_code == 502
+    assert failed.billing_summary is not None
+    assert failed.billing_summary["usage"]["input_pdf_bytes"] == len(b"%PDF-1.7 payload")
     assert services.webhook_dispatcher.calls[0]["payload"]["status"] == "failed"

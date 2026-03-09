@@ -41,6 +41,7 @@ class JobRecord(BaseModel):
     callback_attempts: int = 0
     callback_last_status_code: Optional[int] = None
     callback_last_error: Optional[str] = None
+    billing_summary: Optional[dict] = None
 
 
 class DocumentJobAcceptedResponse(BaseModel):
@@ -64,6 +65,7 @@ class DocumentJobStatusResponse(BaseModel):
     callback_attempts: int = 0
     callback_last_status_code: Optional[int] = None
     callback_last_error: Optional[str] = None
+    billing_summary: Optional[dict] = None
 
     @classmethod
     def from_record(cls, record):
@@ -82,4 +84,5 @@ class DocumentJobStatusResponse(BaseModel):
             callback_attempts=record.callback_attempts,
             callback_last_status_code=record.callback_last_status_code,
             callback_last_error=record.callback_last_error,
+            billing_summary=record.billing_summary,
         )

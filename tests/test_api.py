@@ -75,3 +75,4 @@ def test_get_job_status_returns_created_job():
     assert response.status_code == 200
     assert response.json()["job_id"] == job_id
     assert response.json()["status"] == "queued"
+    assert response.json()["billing_summary"] is None
