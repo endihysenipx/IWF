@@ -1,3 +1,4 @@
+import io
 import xml.etree.ElementTree as ET
 
 
@@ -78,8 +79,7 @@ def parse_edifact_orders(m_orders):
     return header, parties, items
 
 
-def parse_order_xml(file_path):
-    tree = ET.parse(file_path)
+def _parse_order_tree(tree):
     root = tree.getroot()
     orders = root.find('.//ORDERS')
     if orders is None:
@@ -126,5 +126,16 @@ def parse_order_xml(file_path):
             "quantity_unit": unit_attr,
             "line_text": line.findtext('./LTXT/LineText'),
         })
-
     return header, parties, items
+
+
+def parse_order_xml(source):
+    if isinstance(source, ET.ElementTree):
+        tree = source
+    elif isinstance(source, ET.Element):
+        tree = ET.ElementTree(source)
+    elif isinstance(source, (bytes, bytearray)):
+        tree = ET.parse(io.BytesIO(source))
+    else:
+        tree = ET.parse(source)
+    return _parse_order_tree(tree)

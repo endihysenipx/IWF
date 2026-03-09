@@ -1,5 +1,6 @@
 import re
 import datetime
+import io
 import xml.etree.ElementTree as ET
 
 from app.utils import (
@@ -61,7 +62,14 @@ def generate_ordrsp_xml(original_xml_path, ab_data):
 
     parsed_header, parsed_parties, parsed_items = parse_order_xml(original_xml_path)
 
-    tree = ET.parse(original_xml_path)
+    if isinstance(original_xml_path, ET.ElementTree):
+        tree = original_xml_path
+    elif isinstance(original_xml_path, ET.Element):
+        tree = ET.ElementTree(original_xml_path)
+    elif isinstance(original_xml_path, (bytes, bytearray)):
+        tree = ET.parse(io.BytesIO(original_xml_path))
+    else:
+        tree = ET.parse(original_xml_path)
     orig_root = tree.getroot()
     orig_orders = orig_root.find('.//ORDERS')
     orig_head = orig_orders.find('HEAD') if orig_orders is not None else None

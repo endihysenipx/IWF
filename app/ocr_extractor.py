@@ -1,7 +1,7 @@
 import io
 import json
 import base64
-from pdf2image import convert_from_path
+from pdf2image import convert_from_bytes, convert_from_path
 
 from app.config import OPENAI_API_KEY, client, POPPLER_PATH, MAX_AB_PAGES
 
@@ -10,7 +10,10 @@ def extract_data_from_scanned_pdf(pdf_path):
     if not OPENAI_API_KEY or client is None:
         return {"error": "Missing OPENAI_API_KEY environment variable."}
     try:
-        images = convert_from_path(pdf_path, poppler_path=POPPLER_PATH)
+        if isinstance(pdf_path, (bytes, bytearray)):
+            images = convert_from_bytes(pdf_path, poppler_path=POPPLER_PATH)
+        else:
+            images = convert_from_path(pdf_path, poppler_path=POPPLER_PATH)
         if MAX_AB_PAGES > 0:
             images = images[:MAX_AB_PAGES]
     except Exception as e:
