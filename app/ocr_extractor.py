@@ -9,14 +9,21 @@ from app.config import OPENAI_API_KEY, client, POPPLER_PATH, MAX_AB_PAGES
 OCR_MODEL = "gpt-5-chat-latest"
 
 
+def _build_poppler_kwargs(poppler_path):
+    if not poppler_path:
+        return {}
+    return {"poppler_path": poppler_path}
+
+
 def extract_data_from_scanned_pdf(pdf_path):
     if not OPENAI_API_KEY or client is None:
         return {"error": "Missing OPENAI_API_KEY environment variable."}
     try:
+        poppler_kwargs = _build_poppler_kwargs(POPPLER_PATH)
         if isinstance(pdf_path, (bytes, bytearray)):
-            images = convert_from_bytes(pdf_path, poppler_path=POPPLER_PATH)
+            images = convert_from_bytes(pdf_path, **poppler_kwargs)
         else:
-            images = convert_from_path(pdf_path, poppler_path=POPPLER_PATH)
+            images = convert_from_path(pdf_path, **poppler_kwargs)
         if MAX_AB_PAGES > 0:
             images = images[:MAX_AB_PAGES]
     except Exception as e:

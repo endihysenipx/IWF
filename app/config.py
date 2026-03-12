@@ -28,7 +28,7 @@ class Settings:
     local_dev_mode: bool
     local_data_dir: str
     openai_api_key: str
-    poppler_path: str
+    poppler_path: str | None
     max_ab_pages: int
     email_address: str
     email_password: str
@@ -67,10 +67,7 @@ def get_settings():
         local_dev_mode=os.getenv("LOCAL_DEV_MODE", "").strip().lower() in {"1", "true", "yes", "on"},
         local_data_dir=local_data_dir,
         openai_api_key=os.getenv("OPENAI_API_KEY", ""),
-        poppler_path=os.getenv(
-            "POPPLER_PATH",
-            r"C:\Users\Admin\Downloads\Release-25.12.0-0\poppler-25.12.0\Library\bin",
-        ),
+        poppler_path=os.getenv("POPPLER_PATH") or None,
         max_ab_pages=_get_int("MAX_AB_PAGES", 0),
         email_address=os.getenv("EMAIL_ADDRESS", ""),
         email_password=os.getenv("EMAIL_PASSWORD", ""),

@@ -1,0 +1,17 @@
+.env
+.git
+.gitignore
+.pytest_cache
+.venv
+.localdata
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+temp_*.pdf
+temp_*.xml
+temp_api_response.json
+tests
+PLAN.MD
+docs
