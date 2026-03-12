@@ -39,6 +39,10 @@ $ApiAppName = "iwf-api"
 $WorkerAppName = "iwf-worker"
 $ApiImage = "$AcrName.azurecr.io/iwf-api:test"
 $WorkerImage = "$AcrName.azurecr.io/iwf-worker:test"
+$ApiCpu = 0.5
+$ApiMemory = "1.0Gi"
+$WorkerCpu = 0.5
+$WorkerMemory = "1.0Gi"
 ```
 
 ## 3. Create the registry
@@ -92,6 +96,8 @@ az containerapp create `
   --resource-group $ResourceGroup `
   --environment $ContainerEnv `
   --image $ApiImage `
+  --cpu $ApiCpu `
+  --memory $ApiMemory `
   --target-port 8000 `
   --ingress external `
   --min-replicas 1 `
@@ -134,6 +140,8 @@ az containerapp create `
   --resource-group $ResourceGroup `
   --environment $ContainerEnv `
   --image $WorkerImage `
+  --cpu $WorkerCpu `
+  --memory $WorkerMemory `
   --min-replicas 0 `
   --max-replicas 3 `
   --registry-server "$AcrName.azurecr.io" `
@@ -188,16 +196,12 @@ Invoke-WebRequest -Uri "https://$ApiFqdn/ready"
 Then run an authenticated smoke test through the public API:
 
 ```powershell
-$Headers = @{ Authorization = "Bearer $ApiBearerToken" }
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "https://$ApiFqdn/v1/document-jobs" `
-  -Headers $Headers `
-  -Form @{
-    file = Get-Item ".\temp_incoming_ab.pdf"
-    callback_url = "https://webhook.site/your-test-id"
-    correlation_id = "smoke-test-1"
-  }
+curl.exe `
+  -X POST "https://$ApiFqdn/v1/document-jobs" `
+  -H "Authorization: Bearer $ApiBearerToken" `
+  -F "file=@temp_incoming_ab.pdf;type=application/pdf" `
+  -F "callback_url=https://webhook.site/your-test-id" `
+  -F "correlation_id=smoke-test-1"
 ```
 
 ## 9. Check logs
