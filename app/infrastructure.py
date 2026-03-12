@@ -255,7 +255,7 @@ class AzureServiceBusQueue(JobQueue):
         client = ServiceBusClient.from_connection_string(self._connection_string)
         try:
             with client:
-                receiver = client.get_queue_receiver(queue_name=self._queue_name, max_wait_time=0)
+                receiver = client.get_queue_receiver(queue_name=self._queue_name)
                 with receiver:
                     receiver.peek_messages(max_message_count=1)
             return {
