@@ -76,3 +76,17 @@ def test_get_job_status_returns_created_job():
     assert response.json()["job_id"] == job_id
     assert response.json()["status"] == "queued"
     assert response.json()["billing_summary"] is None
+
+
+def test_ready_returns_component_status():
+    services = build_test_services()
+    client = build_test_client(services)
+
+    response = client.get("/ready")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+    assert response.json()["mode"] == "local"
+    assert "blob_storage" in response.json()["components"]
+    assert "job_store" in response.json()["components"]
+    assert "job_queue" in response.json()["components"]

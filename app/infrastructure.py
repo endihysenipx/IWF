@@ -36,6 +36,9 @@ class BlobStorage:
     def download_bytes(self, blob_name):
         raise NotImplementedError
 
+    def check_readiness(self):
+        raise NotImplementedError
+
 
 class JobStore:
     def create_job(self, record):
@@ -48,6 +51,9 @@ class JobStore:
         raise NotImplementedError
 
     def update_job(self, job_id, **updates):
+        raise NotImplementedError
+
+    def check_readiness(self):
         raise NotImplementedError
 
 
@@ -67,6 +73,9 @@ class JobQueue:
         raise NotImplementedError
 
     def dequeue(self, max_wait_time=5):
+        raise NotImplementedError
+
+    def check_readiness(self):
         raise NotImplementedError
 
 
@@ -97,11 +106,20 @@ class AzureBlobStorage(BlobStorage):
         client = self._container.get_blob_client(blob_name)
         return client.download_blob().readall()
 
+    def check_readiness(self):
+        properties = self._container.get_container_properties()
+        return {
+            "backend": "azure-blob",
+            "container": self._container.container_name,
+            "etag": properties.get("etag"),
+        }
+
 
 class AzureTableJobStore(JobStore):
     def __init__(self, connection_string, table_name):
         service = TableServiceClient.from_connection_string(connection_string)
         self._table = service.create_table_if_not_exists(table_name=table_name)
+        self._table_name = table_name
 
     def create_job(self, record):
         self._table.upsert_entity(mode=UpdateMode.REPLACE, entity=self._record_to_entity(record))
@@ -141,6 +159,13 @@ class AzureTableJobStore(JobStore):
         payload = current.model_copy(update={"updated_at": utc_now(), **updates})
         self._table.upsert_entity(mode=UpdateMode.REPLACE, entity=self._record_to_entity(payload))
         return payload
+
+    def check_readiness(self):
+        self._table.get_table_access_policy()
+        return {
+            "backend": "azure-table",
+            "table": self._table_name,
+        }
 
     @staticmethod
     def _record_to_entity(record):
@@ -226,6 +251,20 @@ class AzureServiceBusQueue(JobQueue):
         message = QueueMessage.model_validate_json(body.decode("utf-8"))
         return AzureReceivedQueueMessage(client, receiver, raw_message, message)
 
+    def check_readiness(self):
+        client = ServiceBusClient.from_connection_string(self._connection_string)
+        try:
+            with client:
+                receiver = client.get_queue_receiver(queue_name=self._queue_name, max_wait_time=0)
+                with receiver:
+                    receiver.peek_messages(max_message_count=1)
+            return {
+                "backend": "azure-servicebus",
+                "queue": self._queue_name,
+            }
+        finally:
+            client.close()
+
 
 class RequestsWebhookDispatcher(WebhookDispatcher):
     def __init__(self, timeout_seconds, max_attempts, backoff_seconds):
@@ -280,6 +319,12 @@ class InMemoryBlobStorage(BlobStorage):
     def download_bytes(self, blob_name):
         return self._objects[blob_name]["bytes"]
 
+    def check_readiness(self):
+        return {
+            "backend": "in-memory-blob",
+            "objects": len(self._objects),
+        }
+
 
 class InMemoryJobStore(JobStore):
     def __init__(self):
@@ -306,6 +351,12 @@ class InMemoryJobStore(JobStore):
         updated = current.model_copy(update={"updated_at": utc_now(), **updates})
         self._jobs[job_id] = updated
         return updated
+
+    def check_readiness(self):
+        return {
+            "backend": "in-memory-job-store",
+            "jobs": len(self._jobs),
+        }
 
 
 class InMemoryReceivedQueueMessage(ReceivedQueueMessage):
@@ -341,6 +392,12 @@ class InMemoryJobQueue(JobQueue):
     def depth(self):
         return len(self._messages)
 
+    def check_readiness(self):
+        return {
+            "backend": "in-memory-queue",
+            "depth": self.depth(),
+        }
+
 
 class RecordingWebhookDispatcher(WebhookDispatcher):
     def __init__(self, result=None):
@@ -360,6 +417,16 @@ class ServiceContainer:
     job_queue: JobQueue
     webhook_dispatcher: WebhookDispatcher
 
+    def check_readiness(self):
+        return {
+            "mode": _resolve_runtime_mode(self.settings),
+            "components": {
+                "blob_storage": self.blob_storage.check_readiness(),
+                "job_store": self.job_store.check_readiness(),
+                "job_queue": self.job_queue.check_readiness(),
+            },
+        }
+
 
 class LocalFileBlobStorage(BlobStorage):
     def __init__(self, root_dir):
@@ -376,6 +443,13 @@ class LocalFileBlobStorage(BlobStorage):
     def download_bytes(self, blob_name):
         with open(self._path_for(blob_name), "rb") as handle:
             return handle.read()
+
+    def check_readiness(self):
+        return {
+            "backend": "local-filesystem",
+            "root_dir": self._root_dir,
+            "exists": os.path.isdir(self._root_dir),
+        }
 
     def _path_for(self, blob_name):
         normalized = blob_name.replace("/", os.sep).replace("\\", os.sep)
@@ -453,6 +527,14 @@ class SqliteJobStore(JobStore):
                 ),
             )
         return updated
+
+    def check_readiness(self):
+        with self._connect() as connection:
+            connection.execute("SELECT 1 FROM jobs LIMIT 1").fetchone()
+        return {
+            "backend": "sqlite-job-store",
+            "db_path": self._db_path,
+        }
 
     def _connect(self):
         connection = sqlite3.connect(self._db_path, timeout=30)
@@ -588,15 +670,45 @@ class SqliteJobQueue(JobQueue):
                 """
             )
 
+    def check_readiness(self):
+        with sqlite3.connect(self._db_path, timeout=30) as connection:
+            connection.execute("SELECT 1 FROM queue LIMIT 1").fetchone()
+        return {
+            "backend": "sqlite-queue",
+            "db_path": self._db_path,
+        }
+
+
+class ConfigurationError(RuntimeError):
+    pass
+
+
+def _resolve_runtime_mode(settings):
+    return "local" if settings.local_dev_mode else "azure"
+
+
+def _validate_azure_runtime_settings(settings):
+    missing = [
+        name
+        for name, value in {
+            "API_BEARER_TOKEN": settings.api_bearer_token,
+            "OPENAI_API_KEY": settings.openai_api_key,
+            "IWF_API_URL": settings.iwf_api_url,
+            "IWF_API_EMAIL": settings.iwf_api_email,
+            "IWF_API_PASSWORD": settings.iwf_api_password,
+            "AZURE_SERVICE_BUS_CONNECTION_STRING": settings.azure_service_bus_connection_string,
+            "AZURE_STORAGE_CONNECTION_STRING": settings.azure_storage_connection_string,
+        }.items()
+        if not str(value or "").strip()
+    ]
+    if missing:
+        joined = ", ".join(sorted(missing))
+        raise ConfigurationError(f"Azure mode requires these settings: {joined}")
+
 
 def build_service_container(settings=None):
     resolved_settings = settings or get_settings()
-    use_local = (
-        resolved_settings.local_dev_mode
-        or not resolved_settings.azure_service_bus_connection_string
-        or not resolved_settings.azure_storage_connection_string
-    )
-    if use_local:
+    if resolved_settings.local_dev_mode:
         db_path = os.path.join(resolved_settings.local_data_dir, "document_jobs.sqlite3")
         return ServiceContainer(
             settings=resolved_settings,
@@ -609,6 +721,7 @@ def build_service_container(settings=None):
                 backoff_seconds=resolved_settings.webhook_retry_backoff_seconds,
             ),
         )
+    _validate_azure_runtime_settings(resolved_settings)
     return ServiceContainer(
         settings=resolved_settings,
         blob_storage=AzureBlobStorage(

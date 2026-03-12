@@ -177,11 +177,12 @@ The Azure CLI examples for `--env-vars`, `secretref:...`, `--secrets`, and Servi
 
 ## 8. Verify the deployment
 
-Get the API hostname and test the health endpoint.
+Get the API hostname and test both the liveness and readiness endpoints.
 
 ```powershell
 $ApiFqdn = az containerapp show --name $ApiAppName --resource-group $ResourceGroup --query properties.configuration.ingress.fqdn --output tsv
 Invoke-WebRequest -Uri "https://$ApiFqdn/health"
+Invoke-WebRequest -Uri "https://$ApiFqdn/ready"
 ```
 
 Then run an authenticated smoke test through the public API:
@@ -217,4 +218,4 @@ docker run --rm -p 8000:8000 --env-file .env iwf-api:local
 docker run --rm --env-file .env iwf-worker:local
 ```
 
-The API health check should be reachable at `http://localhost:8000/health`.
+The API liveness and readiness checks should be reachable at `http://localhost:8000/health` and `http://localhost:8000/ready`.

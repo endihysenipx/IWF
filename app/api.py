@@ -21,6 +21,20 @@ def create_app(services=None):
     def healthcheck():
         return {"status": "ok"}
 
+    @application.get("/ready")
+    def readiness():
+        try:
+            report = resolved_services.check_readiness()
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "status": "error",
+                    "message": str(exc),
+                },
+            ) from exc
+        return {"status": "ok", **report}
+
     @application.post(
         "/v1/document-jobs",
         response_model=DocumentJobAcceptedResponse,

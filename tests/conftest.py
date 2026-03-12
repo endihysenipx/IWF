@@ -5,8 +5,8 @@ from app.config import Settings
 from app.infrastructure import InMemoryBlobStorage, InMemoryJobQueue, InMemoryJobStore, RecordingWebhookDispatcher, ServiceContainer
 
 
-def build_test_services(webhook_result=None):
-    settings = Settings(
+def build_test_settings(**overrides):
+    defaults = dict(
         api_bearer_token="test-token",
         local_dev_mode=True,
         local_data_dir=".pytest-localdata",
@@ -41,6 +41,12 @@ def build_test_services(webhook_result=None):
         queue_dequeue_request_usd=0.0,
         webhook_request_usd=0.0,
     )
+    defaults.update(overrides)
+    return Settings(**defaults)
+
+
+def build_test_services(webhook_result=None):
+    settings = build_test_settings()
     return ServiceContainer(
         settings=settings,
         blob_storage=InMemoryBlobStorage(),
