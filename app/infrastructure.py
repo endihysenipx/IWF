@@ -186,6 +186,7 @@ class AzureTableJobStore(JobStore):
         payload["status"] = JobStatus(payload["status"])
         payload["created_at"] = _iso_to_datetime(payload.get("created_at"))
         payload["updated_at"] = _iso_to_datetime(payload.get("updated_at"))
+        payload["processing_started_at"] = _iso_to_datetime(payload.get("processing_started_at")) if payload.get("processing_started_at") else None
         if payload.get("billing_summary"):
             payload["billing_summary"] = json.loads(payload["billing_summary"])
         return JobRecord(**payload)
@@ -467,7 +468,7 @@ class SqliteJobStore(JobStore):
             connection.execute(
                 """
                 INSERT INTO jobs (
-                    job_id, status, created_at, updated_at, callback_url, correlation_id,
+                    job_id, status, created_at, updated_at, processing_started_at, callback_url, correlation_id,
                     input_blob_name, output_blob_name, error_code, error_message,
                     document_number, order_document_number, idempotency_key,
                     callback_attempts, callback_last_status_code, callback_last_error, billing_summary
@@ -499,7 +500,7 @@ class SqliteJobStore(JobStore):
             connection.execute(
                 """
                 UPDATE jobs SET
-                    status = ?, created_at = ?, updated_at = ?, callback_url = ?, correlation_id = ?,
+                    status = ?, created_at = ?, updated_at = ?, processing_started_at = ?, callback_url = ?, correlation_id = ?,
                     input_blob_name = ?, output_blob_name = ?, error_code = ?, error_message = ?,
                     document_number = ?, order_document_number = ?, idempotency_key = ?,
                     callback_attempts = ?, callback_last_status_code = ?, callback_last_error = ?,
@@ -510,6 +511,7 @@ class SqliteJobStore(JobStore):
                     updated.status.value if isinstance(updated.status, JobStatus) else str(updated.status),
                     updated.created_at.isoformat(),
                     updated.updated_at.isoformat(),
+                    updated.processing_started_at.isoformat() if updated.processing_started_at is not None else None,
                     updated.callback_url,
                     updated.correlation_id,
                     updated.input_blob_name,
@@ -550,6 +552,7 @@ class SqliteJobStore(JobStore):
                     status TEXT NOT NULL,
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL,
+                    processing_started_at TEXT,
                     callback_url TEXT NOT NULL,
                     correlation_id TEXT,
                     input_blob_name TEXT,
@@ -569,6 +572,8 @@ class SqliteJobStore(JobStore):
             columns = {row[1] for row in connection.execute("PRAGMA table_info(jobs)").fetchall()}
             if "billing_summary" not in columns:
                 connection.execute("ALTER TABLE jobs ADD COLUMN billing_summary TEXT")
+            if "processing_started_at" not in columns:
+                connection.execute("ALTER TABLE jobs ADD COLUMN processing_started_at TEXT")
 
     @staticmethod
     def _record_to_row(record):
@@ -577,6 +582,7 @@ class SqliteJobStore(JobStore):
             record.status.value if isinstance(record.status, JobStatus) else str(record.status),
             record.created_at.isoformat(),
             record.updated_at.isoformat(),
+            record.processing_started_at.isoformat() if record.processing_started_at is not None else None,
             record.callback_url,
             record.correlation_id,
             record.input_blob_name,
@@ -599,6 +605,7 @@ class SqliteJobStore(JobStore):
             status=JobStatus(row["status"]),
             created_at=_iso_to_datetime(row["created_at"]),
             updated_at=_iso_to_datetime(row["updated_at"]),
+            processing_started_at=_iso_to_datetime(row["processing_started_at"]) if row["processing_started_at"] else None,
             callback_url=row["callback_url"],
             correlation_id=row["correlation_id"],
             input_blob_name=row["input_blob_name"],

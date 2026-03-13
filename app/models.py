@@ -29,6 +29,7 @@ class JobRecord(BaseModel):
     status: JobStatus
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
+    processing_started_at: Optional[datetime] = None
     callback_url: str
     correlation_id: Optional[str] = None
     input_blob_name: Optional[str] = None
@@ -55,6 +56,8 @@ class DocumentJobStatusResponse(BaseModel):
     status: JobStatus
     created_at: datetime
     updated_at: datetime
+    processing_started_at: Optional[datetime] = None
+    queue_wait_seconds: Optional[float] = None
     correlation_id: Optional[str] = None
     input_blob_name: Optional[str] = None
     output_blob_name: Optional[str] = None
@@ -69,11 +72,19 @@ class DocumentJobStatusResponse(BaseModel):
 
     @classmethod
     def from_record(cls, record):
+        queue_wait_seconds = None
+        if record.processing_started_at is not None:
+            queue_wait_seconds = round(
+                max((record.processing_started_at - record.created_at).total_seconds(), 0.0),
+                4,
+            )
         return cls(
             job_id=record.job_id,
             status=record.status,
             created_at=record.created_at,
             updated_at=record.updated_at,
+            processing_started_at=record.processing_started_at,
+            queue_wait_seconds=queue_wait_seconds,
             correlation_id=record.correlation_id,
             input_blob_name=record.input_blob_name,
             output_blob_name=record.output_blob_name,

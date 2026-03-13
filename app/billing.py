@@ -39,6 +39,7 @@ def build_billing_summary(
     webhook_attempt_count: int,
     order_xml_bytes: int,
     output_xml_bytes: int,
+    timings: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     openai_input_cost = (prompt_tokens / 1_000_000) * settings.openai_input_per_million_usd
     openai_output_cost = (completion_tokens / 1_000_000) * settings.openai_output_per_million_usd
@@ -60,6 +61,11 @@ def build_billing_summary(
         "calculated_at": utc_now_iso(),
         "model": model,
         "processing_seconds": round(float(processing_seconds), 4),
+        "timings": {
+            key: round(float(value), 4)
+            for key, value in (timings or {}).items()
+            if value is not None
+        },
         "usage": {
             "input_pdf_bytes": _safe_int(input_pdf_bytes),
             "pdf_pages": _safe_int(pdf_pages),

@@ -1,0 +1,375 @@
+{
+  "summary": {
+    "submitted_jobs": 20,
+    "submit_burst_seconds": 24.985,
+    "processing_poll_seconds": 11.466,
+    "first_submit_to_last_finish_seconds": 33.218,
+    "completed_count": 20,
+    "failed_count": 0,
+    "min_job_seconds": 8.343,
+    "max_job_seconds": 12.075,
+    "avg_job_seconds": 9.859
+  },
+  "jobs": [
+    {
+      "job_id": "36a69a40-696e-4d57-b465-939fd083c4d1",
+      "status": "completed",
+      "duration_seconds": 12.075,
+      "submitted_at": "2026-03-13T08:25:31.355720Z",
+      "updated_at": "2026-03-13T08:25:43.430819Z",
+      "queue_wait_seconds": 0.7303,
+      "processing_seconds": 10.7877,
+      "timings": {
+        "queue_wait_seconds": 0.7303,
+        "blob_download_seconds": 0.1064,
+        "ocr_seconds": 10.3744,
+        "iwf_lookup_seconds": 0.2802,
+        "xml_build_seconds": 0.0019,
+        "output_upload_seconds": 0.0247,
+        "webhook_seconds": 0.4335
+      }
+    },
+    {
+      "job_id": "f5ce37b3-8860-4202-a41b-0f72c46f56bd",
+      "status": "completed",
+      "duration_seconds": 11.087,
+      "submitted_at": "2026-03-13T08:25:19.639233Z",
+      "updated_at": "2026-03-13T08:25:30.726465Z",
+      "queue_wait_seconds": 0.6383,
+      "processing_seconds": 9.8875,
+      "timings": {
+        "queue_wait_seconds": 0.6383,
+        "blob_download_seconds": 0.0417,
+        "ocr_seconds": 9.5252,
+        "iwf_lookup_seconds": 0.2874,
+        "xml_build_seconds": 0.0042,
+        "output_upload_seconds": 0.029,
+        "webhook_seconds": 0.4331
+      }
+    },
+    {
+      "job_id": "a3a452d8-44de-4818-84c5-4c1fdba0fa24",
+      "status": "completed",
+      "duration_seconds": 10.726,
+      "submitted_at": "2026-03-13T08:25:25.487715Z",
+      "updated_at": "2026-03-13T08:25:36.213881Z",
+      "queue_wait_seconds": 0.6592,
+      "processing_seconds": 9.5499,
+      "timings": {
+        "queue_wait_seconds": 0.6592,
+        "blob_download_seconds": 0.04,
+        "ocr_seconds": 9.1892,
+        "iwf_lookup_seconds": 0.2925,
+        "xml_build_seconds": 0.0028,
+        "output_upload_seconds": 0.0253,
+        "webhook_seconds": 0.3876
+      }
+    },
+    {
+      "job_id": "3da793ae-4023-4962-aa0a-e49f22ca61aa",
+      "status": "completed",
+      "duration_seconds": 10.723,
+      "submitted_at": "2026-03-13T08:25:10.213201Z",
+      "updated_at": "2026-03-13T08:25:20.936241Z",
+      "queue_wait_seconds": 0.6828,
+      "processing_seconds": 9.511,
+      "timings": {
+        "queue_wait_seconds": 0.6828,
+        "blob_download_seconds": 0.0448,
+        "ocr_seconds": 9.1043,
+        "iwf_lookup_seconds": 0.3352,
+        "xml_build_seconds": 0.002,
+        "output_upload_seconds": 0.0247,
+        "webhook_seconds": 0.3945
+      }
+    },
+    {
+      "job_id": "feb3b154-0dbd-43d4-a243-0071cdfa4eee",
+      "status": "completed",
+      "duration_seconds": 10.508,
+      "submitted_at": "2026-03-13T08:25:20.808301Z",
+      "updated_at": "2026-03-13T08:25:31.316219Z",
+      "queue_wait_seconds": 0.6869,
+      "processing_seconds": 8.8568,
+      "timings": {
+        "queue_wait_seconds": 0.6869,
+        "blob_download_seconds": 0.0402,
+        "ocr_seconds": 8.5151,
+        "iwf_lookup_seconds": 0.2516,
+        "xml_build_seconds": 0.0021,
+        "output_upload_seconds": 0.0477,
+        "webhook_seconds": 0.8347
+      }
+    },
+    {
+      "job_id": "3cf8fb13-df63-4310-8da1-ad3b340d838c",
+      "status": "completed",
+      "duration_seconds": 10.134,
+      "submitted_at": "2026-03-13T08:25:14.956660Z",
+      "updated_at": "2026-03-13T08:25:25.090424Z",
+      "queue_wait_seconds": 0.645,
+      "processing_seconds": 8.7541,
+      "timings": {
+        "queue_wait_seconds": 0.645,
+        "blob_download_seconds": 0.0397,
+        "ocr_seconds": 8.3993,
+        "iwf_lookup_seconds": 0.2879,
+        "xml_build_seconds": 0.0021,
+        "output_upload_seconds": 0.0252,
+        "webhook_seconds": 0.6068
+      }
+    },
+    {
+      "job_id": "88507423-185a-46ae-9d7a-da11134900bb",
+      "status": "completed",
+      "duration_seconds": 10.049,
+      "submitted_at": "2026-03-13T08:25:24.320317Z",
+      "updated_at": "2026-03-13T08:25:34.369273Z",
+      "queue_wait_seconds": 0.6325,
+      "processing_seconds": 8.6459,
+      "timings": {
+        "queue_wait_seconds": 0.6325,
+        "blob_download_seconds": 0.1212,
+        "ocr_seconds": 8.2053,
+        "iwf_lookup_seconds": 0.291,
+        "xml_build_seconds": 0.002,
+        "output_upload_seconds": 0.0264,
+        "webhook_seconds": 0.6126
+      }
+    },
+    {
+      "job_id": "1d2f6a7f-83fe-457b-b32d-e931b83fd88b",
+      "status": "completed",
+      "duration_seconds": 9.926,
+      "submitted_at": "2026-03-13T08:25:17.300135Z",
+      "updated_at": "2026-03-13T08:25:27.226296Z",
+      "queue_wait_seconds": 0.7467,
+      "processing_seconds": 8.5082,
+      "timings": {
+        "queue_wait_seconds": 0.7467,
+        "blob_download_seconds": 0.106,
+        "ocr_seconds": 8.1628,
+        "iwf_lookup_seconds": 0.2118,
+        "xml_build_seconds": 0.002,
+        "output_upload_seconds": 0.0255,
+        "webhook_seconds": 0.5388
+      }
+    },
+    {
+      "job_id": "c905e794-87ac-49d5-a1e3-854d008af16d",
+      "status": "completed",
+      "duration_seconds": 9.898,
+      "submitted_at": "2026-03-13T08:25:11.430936Z",
+      "updated_at": "2026-03-13T08:25:21.329250Z",
+      "queue_wait_seconds": 0.6478,
+      "processing_seconds": 8.731,
+      "timings": {
+        "queue_wait_seconds": 0.6478,
+        "blob_download_seconds": 0.0412,
+        "ocr_seconds": 8.2741,
+        "iwf_lookup_seconds": 0.3877,
+        "xml_build_seconds": 0.0018,
+        "output_upload_seconds": 0.0262,
+        "webhook_seconds": 0.391
+      }
+    },
+    {
+      "job_id": "3782856d-7ae7-4770-ba9f-0d688d51e8f8",
+      "status": "completed",
+      "duration_seconds": 9.83,
+      "submitted_at": "2026-03-13T08:25:13.774644Z",
+      "updated_at": "2026-03-13T08:25:23.605030Z",
+      "queue_wait_seconds": 0.6593,
+      "processing_seconds": 8.6604,
+      "timings": {
+        "queue_wait_seconds": 0.6593,
+        "blob_download_seconds": 0.0396,
+        "ocr_seconds": 8.2749,
+        "iwf_lookup_seconds": 0.3172,
+        "xml_build_seconds": 0.0022,
+        "output_upload_seconds": 0.0265,
+        "webhook_seconds": 0.3835
+      }
+    },
+    {
+      "job_id": "82a4eb19-77fd-42a5-8939-35ea047b5f5d",
+      "status": "completed",
+      "duration_seconds": 9.798,
+      "submitted_at": "2026-03-13T08:25:12.595787Z",
+      "updated_at": "2026-03-13T08:25:22.394247Z",
+      "queue_wait_seconds": 0.6581,
+      "processing_seconds": 8.3337,
+      "timings": {
+        "queue_wait_seconds": 0.6581,
+        "blob_download_seconds": 0.0417,
+        "ocr_seconds": 7.9586,
+        "iwf_lookup_seconds": 0.3045,
+        "xml_build_seconds": 0.0023,
+        "output_upload_seconds": 0.0265,
+        "webhook_seconds": 0.6791
+      }
+    },
+    {
+      "job_id": "acb97a03-6f07-4ea3-801c-a6fa52435431",
+      "status": "completed",
+      "duration_seconds": 9.718,
+      "submitted_at": "2026-03-13T08:25:16.119741Z",
+      "updated_at": "2026-03-13T08:25:25.837621Z",
+      "queue_wait_seconds": 0.6714,
+      "processing_seconds": 8.5417,
+      "timings": {
+        "queue_wait_seconds": 0.6714,
+        "blob_download_seconds": 0.0478,
+        "ocr_seconds": 8.1407,
+        "iwf_lookup_seconds": 0.3226,
+        "xml_build_seconds": 0.0021,
+        "output_upload_seconds": 0.0284,
+        "webhook_seconds": 0.3785
+      }
+    },
+    {
+      "job_id": "ae179efe-c654-439e-9d43-72db98db18b5",
+      "status": "completed",
+      "duration_seconds": 9.583,
+      "submitted_at": "2026-03-13T08:25:21.981209Z",
+      "updated_at": "2026-03-13T08:25:31.563927Z",
+      "queue_wait_seconds": 0.6357,
+      "processing_seconds": 8.4357,
+      "timings": {
+        "queue_wait_seconds": 0.6357,
+        "blob_download_seconds": 0.041,
+        "ocr_seconds": 8.1429,
+        "iwf_lookup_seconds": 0.2255,
+        "xml_build_seconds": 0.0019,
+        "output_upload_seconds": 0.0244,
+        "webhook_seconds": 0.3861
+      }
+    },
+    {
+      "job_id": "f20427e1-41a6-42c8-b571-efdf3289207a",
+      "status": "completed",
+      "duration_seconds": 9.442,
+      "submitted_at": "2026-03-13T08:25:23.143532Z",
+      "updated_at": "2026-03-13T08:25:32.585215Z",
+      "queue_wait_seconds": 0.6437,
+      "processing_seconds": 8.0641,
+      "timings": {
+        "queue_wait_seconds": 0.6437,
+        "blob_download_seconds": 0.0441,
+        "ocr_seconds": 7.6858,
+        "iwf_lookup_seconds": 0.3048,
+        "xml_build_seconds": 0.0032,
+        "output_upload_seconds": 0.026,
+        "webhook_seconds": 0.5974
+      }
+    },
+    {
+      "job_id": "b33ec9c8-d075-4ba3-80b1-45bd1200fabe",
+      "status": "completed",
+      "duration_seconds": 9.343,
+      "submitted_at": "2026-03-13T08:25:30.180772Z",
+      "updated_at": "2026-03-13T08:25:39.524107Z",
+      "queue_wait_seconds": 0.7405,
+      "processing_seconds": 8.1451,
+      "timings": {
+        "queue_wait_seconds": 0.7405,
+        "blob_download_seconds": 0.1107,
+        "ocr_seconds": 7.7668,
+        "iwf_lookup_seconds": 0.2375,
+        "xml_build_seconds": 0.003,
+        "output_upload_seconds": 0.0271,
+        "webhook_seconds": 0.3141
+      }
+    },
+    {
+      "job_id": "b793b833-f7d5-4fda-9c78-4c1083f00b52",
+      "status": "completed",
+      "duration_seconds": 9.248,
+      "submitted_at": "2026-03-13T08:25:18.471350Z",
+      "updated_at": "2026-03-13T08:25:27.719492Z",
+      "queue_wait_seconds": 0.6449,
+      "processing_seconds": 8.063,
+      "timings": {
+        "queue_wait_seconds": 0.6449,
+        "blob_download_seconds": 0.0399,
+        "ocr_seconds": 7.6905,
+        "iwf_lookup_seconds": 0.3046,
+        "xml_build_seconds": 0.002,
+        "output_upload_seconds": 0.0254,
+        "webhook_seconds": 0.4117
+      }
+    },
+    {
+      "job_id": "064581dd-89ea-4ddc-a87a-74ed1b9bae2f",
+      "status": "completed",
+      "duration_seconds": 9.174,
+      "submitted_at": "2026-03-13T08:25:29.010817Z",
+      "updated_at": "2026-03-13T08:25:38.184318Z",
+      "queue_wait_seconds": 0.6489,
+      "processing_seconds": 7.725,
+      "timings": {
+        "queue_wait_seconds": 0.6489,
+        "blob_download_seconds": 0.0379,
+        "ocr_seconds": 7.444,
+        "iwf_lookup_seconds": 0.2163,
+        "xml_build_seconds": 0.0016,
+        "output_upload_seconds": 0.0252,
+        "webhook_seconds": 0.6727
+      }
+    },
+    {
+      "job_id": "0f83b5f9-250b-4d32-9910-e0bd196dedf0",
+      "status": "completed",
+      "duration_seconds": 8.815,
+      "submitted_at": "2026-03-13T08:25:26.663227Z",
+      "updated_at": "2026-03-13T08:25:35.477730Z",
+      "queue_wait_seconds": 0.8452,
+      "processing_seconds": 7.4511,
+      "timings": {
+        "queue_wait_seconds": 0.8452,
+        "blob_download_seconds": 0.0367,
+        "ocr_seconds": 7.0756,
+        "iwf_lookup_seconds": 0.3128,
+        "xml_build_seconds": 0.0013,
+        "output_upload_seconds": 0.0247,
+        "webhook_seconds": 0.3937
+      }
+    },
+    {
+      "job_id": "c5b850a3-a242-4fd0-9399-54dd6bf5803f",
+      "status": "completed",
+      "duration_seconds": 8.764,
+      "submitted_at": "2026-03-13T08:25:27.848015Z",
+      "updated_at": "2026-03-13T08:25:36.612313Z",
+      "queue_wait_seconds": 0.6432,
+      "processing_seconds": 7.6166,
+      "timings": {
+        "queue_wait_seconds": 0.6432,
+        "blob_download_seconds": 0.1104,
+        "ocr_seconds": 7.178,
+        "iwf_lookup_seconds": 0.2989,
+        "xml_build_seconds": 0.002,
+        "output_upload_seconds": 0.0273,
+        "webhook_seconds": 0.3805
+      }
+    },
+    {
+      "job_id": "58fb4ba7-f6cb-4df3-a003-42dbc4566318",
+      "status": "completed",
+      "duration_seconds": 8.343,
+      "submitted_at": "2026-03-13T08:25:32.547599Z",
+      "updated_at": "2026-03-13T08:25:40.890466Z",
+      "queue_wait_seconds": 0.6614,
+      "processing_seconds": 7.1909,
+      "timings": {
+        "queue_wait_seconds": 0.6614,
+        "blob_download_seconds": 0.0365,
+        "ocr_seconds": 6.9528,
+        "iwf_lookup_seconds": 0.1724,
+        "xml_build_seconds": 0.0017,
+        "output_upload_seconds": 0.0274,
+        "webhook_seconds": 0.3641
+      }
+    }
+  ]
+}

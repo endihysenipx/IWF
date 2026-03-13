@@ -90,3 +90,25 @@ def test_ready_returns_component_status():
     assert "blob_storage" in response.json()["components"]
     assert "job_store" in response.json()["components"]
     assert "job_queue" in response.json()["components"]
+
+
+def test_get_job_status_includes_queue_wait_fields():
+    services = build_test_services()
+    client = build_test_client(services)
+
+    create_response = client.post(
+        "/v1/document-jobs",
+        headers={"Authorization": "Bearer test-token"},
+        files={"file": ("input.pdf", b"%PDF-1.7 payload", "application/pdf")},
+        data={"callback_url": "https://evosystem.example.com/callback", "correlation_id": "corr-3"},
+    )
+    job_id = create_response.json()["job_id"]
+
+    response = client.get(
+        f"/v1/document-jobs/{job_id}",
+        headers={"Authorization": "Bearer test-token"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["processing_started_at"] is None
+    assert response.json()["queue_wait_seconds"] is None

@@ -42,7 +42,14 @@ def test_worker_processes_job_and_posts_completion(monkeypatch):
     updated = services.job_store.get_job(job_id)
     assert updated.status == JobStatus.COMPLETED
     assert updated.output_blob_name == "output/job-1/ORDRSP_AB-10.xml"
+    assert updated.processing_started_at is not None
     assert updated.billing_summary is not None
+    assert updated.billing_summary["timings"]["queue_wait_seconds"] >= 0
+    assert updated.billing_summary["timings"]["ocr_seconds"] >= 0
+    assert updated.billing_summary["timings"]["iwf_lookup_seconds"] >= 0
+    assert updated.billing_summary["timings"]["xml_build_seconds"] >= 0
+    assert updated.billing_summary["timings"]["output_upload_seconds"] >= 0
+    assert updated.billing_summary["timings"]["webhook_seconds"] >= 0
     assert updated.billing_summary["usage"]["input_pdf_bytes"] == len(b"%PDF-1.7 payload")
     assert updated.billing_summary["costs"]["total_estimated_usd"] == 0.0
     assert services.webhook_dispatcher.calls[0]["payload"]["status"] == "completed"
@@ -74,8 +81,11 @@ def test_processor_marks_job_failed_when_order_number_missing(monkeypatch):
     failed = services.job_store.get_job(job_id)
     assert failed.status == JobStatus.FAILED
     assert failed.error_code == "ORDER_DOCUMENT_NOT_FOUND"
+    assert failed.processing_started_at is not None
     assert failed.callback_attempts == 2
     assert failed.callback_last_status_code == 502
     assert failed.billing_summary is not None
+    assert failed.billing_summary["timings"]["queue_wait_seconds"] >= 0
+    assert failed.billing_summary["timings"]["ocr_seconds"] >= 0
     assert failed.billing_summary["usage"]["input_pdf_bytes"] == len(b"%PDF-1.7 payload")
     assert services.webhook_dispatcher.calls[0]["payload"]["status"] == "failed"
