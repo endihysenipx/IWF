@@ -1,9 +1,10 @@
+import base64
 import io
 import json
-import base64
+
 from pdf2image import convert_from_bytes, convert_from_path
 
-from app.config import OPENAI_API_KEY, client, POPPLER_PATH, MAX_AB_PAGES
+from app.config import MAX_AB_PAGES, OPENAI_API_KEY, POPPLER_PATH, client
 
 
 OCR_MODEL = "gpt-5-chat-latest"
@@ -29,9 +30,19 @@ def extract_data_from_scanned_pdf(pdf_path):
     except Exception as e:
         return {"error": f"Poppler Error: {str(e)}"}
 
-    if not images: return {"error": "No images found."}
+    if not images:
+        return {"error": "No images found."}
 
-    content_list = [{"type": "text", "text": "Extract ALL details from this German Order Confirmation. Be extremely precise."}]
+    content_list = [
+        {
+            "type": "text",
+            "text": (
+                "Extract only the fields listed below from this German order confirmation. "
+                "Be extremely precise. Only return values that are clearly visible on the PDF. "
+                "Do not guess, infer, repair, or calculate missing values. If a value is missing or unreadable, return null."
+            ),
+        }
+    ]
     rendered_image_bytes = 0
 
     for idx, img in enumerate(images, start=1):
@@ -51,82 +62,68 @@ def extract_data_from_scanned_pdf(pdf_path):
         )
         content_list.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_str}"}})
 
-    content_list.append({"type": "text", "text": """
-    Return a VALID JSON object with this exact structure (extract everything visible):
+    content_list.append(
+        {
+            "type": "text",
+            "text": """
+    Return a VALID JSON object with this exact structure and no extra keys:
     {
         "document_info": {
-            "title": "Document Title",
-            "document_number": "The DocumentNumber which probably says Belegnummer in the pdf",
-            "document_date": "Date",
-            "customer_number": "Kunde Number",
-            "representative": "Vertreter Name",
-            "delivery_week": "Lieferwoche",
-            "delivery_terms": "Lieferung"
+            "document_number": "AB document number, often labeled Nummer or Belegnummer",
+            "document_date": "AB document date",
+            "delivery_week": "Lieferwoche if visible",
+            "delivery_terms": "Lieferung text if visible"
         },
         "order_references": {
-            "your_order_number": "Ihre Bestellung",
-            "your_order_date": "Ihre Bestellung vom"
+            "your_order_number": "Customer order number, often labeled Ihre Bestellung"
         },
         "supplier_info": {
-            "name": "Company Name",
-            "address": "Full Address lines",
-            "phone": "Telefon",
-            "fax": "Fax",
-            "email": "E-Mail",
-            "managing_director": "Geschäftsführer",
-            "registry": "Handelsregister",
-            "vat_id": "USt-IdNr",
-            "bank_name": "Bankverbindung",
-            "iban": "IBAN",
-            "bic": "BIC"
-        },
-        "customer_address": {
-            "raw_text": "Full block of customer address",
-            "gln": "GLN",
-            "city": "City/Zip"
-        },
-        "shipping_address": {
-            "raw_text": "Full block of Versandanschrift",
-            "name": "Name",
-            "street": "Street",
-            "city": "City"
+            "vat_id": "Supplier VAT ID / USt-IdNr if clearly visible"
         },
         "line_items": [
             {
-                "pos_number": "Bestellnummer",
-                "description": "Artikelbezeichnung",
-                "customer_reference": "Reference under description",
-                "technical_reference": "Dessin / Tech Ref",
-                "ean": "EAN",
-                "quantity": "Menge",
-                "unit": "Unit",
-                "unit_price": "Einzelpreis",
-                "total_price": "Calculated total"
+                "pos_number": "Bestellnummer or line position if visible",
+                "description": "Artikelbezeichnung if visible",
+                "customer_reference": "Customer reference if clearly visible",
+                "technical_reference": "Dessin / technical reference if visible",
+                "ean": "EAN if visible",
+                "quantity": "Confirmed quantity / Menge",
+                "unit_price": "Visible unit price / Einzelpreis"
             }
         ],
         "financials": {
-            "discount_text": "Text",
-            "discount_amount": "Amount",
+            "discount_text": "Visible discount text, for example -8,1 % Rabatt",
+            "discount_amount": "Visible discount amount only if explicitly printed",
             "net_sum": "Nettosumme",
-            "tax_text": "Steuer text",
-            "tax_amount": "Tax amount",
+            "tax_text": "Tax text, for example Steuer 19 % gesamt",
+            "tax_amount": "Visible tax amount",
             "total_gross_amount": "Auftragssumme",
-            "currency": "EUR"
-        },
-        "payment_conditions": "Full text of Zahlungskonditionen"
+            "currency": "Currency if explicitly visible, otherwise null"
+        }
     }
-    """})
+
+    Extraction notes:
+    - Only extract fields that are clearly visible on the PDF.
+    - Do not calculate totals.
+    - Do not invent units, references, addresses, contact details, or dates.
+    - If a field is missing or unreadable, return null.
+    - Keep line_items in the same order as shown on the PDF.
+    """,
+        }
+    )
 
     try:
         response = client.chat.completions.create(
             model=OCR_MODEL,
             messages=[{"role": "user", "content": content_list}],
             max_tokens=4000,
-            temperature=0
+            temperature=0,
         )
         content = response.choices[0].message.content.strip()
-        if content.startswith("```json"): content = content.replace("```json", "").replace("```", "")
-        if content.startswith("```"): content = content.replace("```", "")
+        if content.startswith("```json"):
+            content = content.replace("```json", "").replace("```", "")
+        if content.startswith("```"):
+            content = content.replace("```", "")
         usage = getattr(response, "usage", None)
         prompt_tokens = int(getattr(usage, "prompt_tokens", 0) or 0)
         completion_tokens = int(getattr(usage, "completion_tokens", 0) or 0)
